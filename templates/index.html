@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  h3 {
+  background: #eee;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 15px;
+}
+.success {
+  color: green;
+  text-align: center;
+  font-weight: bold;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: url("/static/self.png") no-repeat center center fixed;
+  background-size: cover;
+}
+.page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.form-container {
+  background: rgba(255,255,255,0.3);
+  backdrop-filter: blur(6px);
+  width: 100%;
+  max-width: 420px;   /* perfect for phones */
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  background: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0b5ed7;
+}
+
+/* 📱 Mobile tweaks */
+@media (max-width: 480px) {
+  .form-container {
+    padding: 12px;
+  }
+
+  .form-container h2 {
+    font-size: 18px;
+  }
+}
+</style>
+  <title>Trainer Registration</title>
+</head>
+<body>
+<div class="page">
+<div class="form-container">
+  <h2>Trainer Registration Form</h2>
+  <form method="post" enctype="multipart/form-data">
+
+  <h3>Personal Details</h3>
+  <div class="form-group">
+    <label>Full Name</label>
+    <input type="text" name="name" required>
+  </div>
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" name="email" required>
+  </div>
+  <div class="form-group">
+    <label>Mobile Number</label>
+    <input type="text" name="mobile" required>
+  </div>
+  <div class="form-group">
+    <label>Date of Birth</label>
+    <input type="date" name="dob" required>
+  </div>
+  <div class="form-group">
+    <label>Address</label>
+    <textarea name="address" rows="3" required></textarea>
+  </div>
+  <div class="form-group">
+    <label>Belt / Level</label>
+    <input type="text" name="belt" required>
+  </div>
+  <div class="form-group">
+    <label>Qualification</label>
+    <select name="qualification" required>
+      <option value="">-- Select --</option>
+      <option>12th Pass</option>
+      <option>Graduate</option>
+      <option>Post Graduate</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Experience (years)</label>
+    <input type="number" name="experience" min="0" required>
+  </div>
+  <h3>Work Information</h3>
+  <div class="form-group">
+    <label>Block</label>
+    <select id="block" name="block" required>
+      <option value="">-- Select Block --</option>
+      {% for b in schools.keys() %}
+        <option value="{{b}}">{{b}}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Cluster</label>
+    <select id="cluster" name="cluster" required>
+      <option value="">-- Select Cluster --</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>School</label>
+    <select id="school">
+      <option value="">-- Select School --</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <button type="button" onclick="addSchool()">Add School</button>
+  </div>
+  <div class="form-group">
+    <button type="button" onclick="removeSchool()">Remove Selected</button>
+  </div>
+
+  <label>Selected Schools</label>
+  <select id="selectedSchools" name="schools" multiple size="5" required></select>
+  <small id="msg" style="color:red;"></small>
+  
+  <hr>
+<h3>Upload Documents</h3>
+
+<div class="form-group">
+  <label>Aadhaar Card</label>
+  <input type="file" name="aadhaar" required>
+</div>
+
+<div class="form-group">
+  <label>Passport Photo</label>
+  <input type="file" name="photo" required>
+</div>
+
+<div class="form-group">
+  <label>Belt Certificate</label>
+  <input type="file" name="belt_cert" required>
+</div>
+
+<div class="form-group">
+  <label>Qualification Certificate</label>
+  <input type="file" name="qual_cert" required>
+</div>
+<button type="submit">Submit Registration</button>
+</form>
+
+{% if success %}
+<p class="success">✅ Thanks! Your data is submitted.</p>
+{% endif %}
+
+<script>
+const data = {{ schools | tojson }};
+const blockSel = document.getElementById("block");
+const clusterSel = document.getElementById("cluster");
+const schoolSel = document.getElementById("school");
+const selectedSel = document.getElementById("selectedSchools");
+const msg = document.getElementById("msg");
+
+blockSel.onchange = () => {
+  clusterSel.innerHTML = '<option value="">-- Select Cluster --</option>';
+  schoolSel.innerHTML = '<option value="">-- Select School --</option>';
+  if(blockSel.value){
+    Object.keys(data[blockSel.value]).forEach(c => {
+      clusterSel.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+  }
+};
+
+clusterSel.onchange = () => {
+  schoolSel.innerHTML = '<option value="">-- Select School --</option>';
+  const b = blockSel.value;
+  const c = clusterSel.value;
+  if(b && c){
+    data[b][c].forEach(s => {
+      schoolSel.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+  }
+};
+
+function addSchool(){
+  const school = schoolSel.value;
+  const cluster = clusterSel.value;
+  if(!school || !cluster) return;
+  const val = cluster + " | " + school;
+
+  for(let opt of selectedSel.options){
+    if(opt.value === val){
+      msg.textContent = "Already added.";
+      return;
+    }
+  }
+  const opt = document.createElement("option");
+  opt.value = val;
+  opt.text = val;
+  opt.selected = true;
+  selectedSel.appendChild(opt);
+  msg.textContent = "";
+}
+
+function removeSchool(){
+  Array.from(selectedSel.selectedOptions).forEach(o => o.remove());
+}
+</script>
+{% if success %}
+<script>
+  // Reset form after successful submit
+  document.querySelector("form").reset();
+
+  // Remove success from URL so refresh doesn't resubmit
+  if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.pathname);
+  }
+</script>
+{% endif %}
+</div>
+</div>
+</body>
+</html>
+
